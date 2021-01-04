@@ -1,38 +1,46 @@
-# Node.js Piepeline
-# Build a Node.js project.
+# Node.js with Angular
+# Build a Node.js project that uses Angular.
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
-  - main
+  - master
 
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-  - task: Npm@1
-    displayName: 'npm install'
+  - task: NodeTool@0
     inputs:
-      verbose: false
+      versionSpec: '10.x'
+    displayName: 'Install Node.js'
 
-  - task: Npm@1
-    displayName: 'npm run build-prod'
-    inputs:
-      command: custom
-      verbose: false
-      customCommand: 'run ng build api --prod'
+  - script: |
+      npm ci
+      npm run build
+    displayName: 'npm install and build'
 
   - task: CopyFiles@2
-    displayName: 'Copy node modules to: dist/apps/api'
     inputs:
-      Contents: 'node_modules/**'
-      TargetFolder: dist/apps/api
+      Contents: 'package*.json'
+      TargetFolder: 'dist'
+
+  - task: Npm@1
+    inputs:
+      command: 'custom'
+      workingDir: 'dist'
+      customCommand: 'ci --production'
 
   - task: ArchiveFiles@2
-    displayName: 'Archive files'
     inputs:
-      rootFolderOrFile: dist/apps/api
-      includeRootFolder: false
+      rootFolderOrFile: 'dist'
+      includeRootFolder: true
+      archiveType: 'zip'
+      archiveFile: 'dist.zip'
+      replaceExistingArchive: true
 
   - task: PublishBuildArtifacts@1
-    displayName: 'Publish artifacts: drop'
+    inputs:
+      PathtoPublish: 'dist.zip'
+      ArtifactName: 'NestDemo'
+      publishLocation: 'Container'
